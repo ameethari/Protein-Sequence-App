@@ -21,8 +21,8 @@ class ProteinSearchApp: #this wraps all code into a class, keeping code organise
     def __init__(self): #this function is an intialiser (a special method), and is the blueprint for how a new object of that class should be set up when it's first created 
         self.root = ctk.CTk() #this makes the main window
         self.root.title("Protein Sequence Finder") #sets the top bar text
-        self.root.geometry("900x700")
-        self.root.minsize(800, 600) #this prevents the window being squished smaller than this
+        self.root.geometry("1200x1000")
+        self.root.minsize(1000, 850) #this prevents the window being squished smaller than this
 
         #Variables
         self.current_sequence = "" #a placeholder for the FASTA sequence that will be outputted later
@@ -147,6 +147,7 @@ class ProteinSearchApp: #this wraps all code into a class, keeping code organise
 
         #progress bar + status
         self.progress_bar = ctk.CTkProgressBar(main_frame)
+        self.progress_bar.set(0)
         self.progress_bar.pack(fill="x", padx=20, pady=(0,10))
         self.root.update()
         #self.progress_bar.pack_forget() # to hide the progress bar initially 
@@ -195,7 +196,7 @@ class ProteinSearchApp: #this wraps all code into a class, keeping code organise
         #now create protein metadata box (like title, length of amino acid chain, organsim...)
         self.info_textbox = ctk.CTkTextbox(
             self.results_frame,
-            height=100,
+            height=80,
             font=ctk.CTkFont(family="Consolas", size=12)
         )
         self.info_textbox.pack(fill="x", padx=15, pady=(0,10))
@@ -204,11 +205,12 @@ class ProteinSearchApp: #this wraps all code into a class, keeping code organise
         #now create a protein sequence box
         self.results_textbox= ctk.CTkTextbox(
             self.results_frame,
+            height=300, #to set a minimunm height, even when empty to make it visible on startup regardless of window size
             font=ctk.CTkFont(family="Consolas", size=11),
             wrap="char" #this is a setting for a text box that determines how long lines of text are broke up - in this case, the text will break and move to the next line after any single character if the line runs out of space - as the DNA/Protein sequence wont have any natural gaps in it - instead of word wrap, which will wait for a whole word before moving to next line - this is done by the CHARacter
         )
         self.results_textbox.pack(fill="both", expand=True, padx=15, pady=(0,15)) #fill both means fill extra space in both the horizontal and vertical directions. Expand=True tells the textbox to absorb any extra space allocated to its parent frame, allowing the widget to grow if the user enlarges the application window
-
+        
 
         #disable copy button and save button until data appears
         self.copy_button.configure(state="disabled")
@@ -363,7 +365,8 @@ class ProteinSearchApp: #this wraps all code into a class, keeping code organise
         self.results_textbox.delete("1.0", tk.END)
 
         record = summary[0]
-
+        self.current_sequence = sequence
+        self.current_info = f"Title: {record.get('Title', 'N/A')}\nOrganism: {record.get('Organism', 'N/A')}\nLength: {record.get('Length', 'N/A')} aa\nAccession: {record.get('AccessionVersion', 'N/A')}"
     # Show summary information
         self.info_textbox.insert(
             tk.END,
@@ -398,9 +401,11 @@ class ProteinSearchApp: #this wraps all code into a class, keeping code organise
     #5 - COPY + SAVE
     def copy_sequence(self): #finally making the method that copies the sequence that is assigned to the button from above
         #copy to clipboard
-        if self.current_sequence: #another guard clause - this first line is checking if self.current_sequence has a value, ie a sequence that has been stored in it, preventing user copying an empty search result
+        sequence_text = self.results_textbox.get("1.0", tk.END).strip()#this gets the text from my results text box
+        if sequence_text: #another guard clause - this first line is checking if self.current_sequence has a value, ie a sequence that has been stored in it, preventing user copying an empty search result
             self.root.clipboard_clear() #this clears any previous content from the OSs clipboard
-            self.root.clipboard_append(self.current_sequence)
+            self.root.clipboard_append(sequence_text)
+            self.root.update()
             self.status_label.configure(text="Sequence copied to clipboard!") #immediate user feedback given
 
     def save_sequence(self):
@@ -413,7 +418,7 @@ class ProteinSearchApp: #this wraps all code into a class, keeping code organise
 
         file_path = filedialog.asksaveasfilename( #this calles the asksaveasfilename function from the filedialog module to open the OS's save as window
             defaultextension=".fasta",
-            initialfilename=default_filename, #prefills the filename box with cleaned user version from above
+            initialfile=default_filename, #(the correct parameter name for tkinter's file dialog is initialfile) prefills the filename box with cleaned user version from above
             filetypes=[("FASTA files", "*.fasta"), ("Text files", "*.txt"), ("All files", "*.*")] #this defines the list of file types seen in the OS's save as window that the user can choose from
         )
 
